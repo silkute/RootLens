@@ -22,6 +22,11 @@ type Configuration struct {
 }
 
 func Initialize(dir, origin string, names []string) error {
+	normalized, err := NormalizeHTTPSOrigin(origin)
+	if err != nil {
+		return err
+	}
+	origin = normalized
 	if _, e := os.Stat(filepath.Join(dir, "hub.json")); e == nil {
 		return errors.New("already_initialized")
 	}

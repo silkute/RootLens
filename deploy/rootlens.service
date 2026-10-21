@@ -5,7 +5,8 @@ After=network-online.target
 [Service]
 User=rootlens
 Group=rootlens
-ExecStart=/usr/local/bin/rootlens serve --data /var/lib/rootlens --listen 127.0.0.1:8443
+EnvironmentFile=-/etc/rootlens/hub.env
+ExecStart=/usr/local/bin/rootlens serve --data /var/lib/rootlens
 Restart=on-failure
 StateDirectory=rootlens
 UMask=0077
