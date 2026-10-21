@@ -41,6 +41,16 @@ jobs:
       - run: docker compose -f tests/proxy/compose.yml up --abort-on-container-exit --exit-code-from test
       - if: always()
         run: docker compose -f tests/proxy/compose.yml down --volumes
+      - name: Check installer shell scripts
+        run: shellcheck --shell=sh install.sh deploy/package-install.sh tests/install/smoke.sh
+      - name: Exercise one-command installation
+        run: |
+          docker build --target hub -f deploy/Dockerfile -t ghcr.io/silkute/rootlens-hub:v0.1.0-preview.2 .
+          docker build --target agent -f deploy/Dockerfile -t ghcr.io/silkute/rootlens-agent:v0.1.0-preview.2 .
+          sh deploy/package-install.sh v0.1.0-preview.2 /tmp/rootlens-offline-bundle
+          cd /tmp/rootlens-offline-bundle && sha256sum rootlens-docker-* > SHA256SUMS
+          cd "$GITHUB_WORKSPACE"
+          sudo sh tests/install/smoke.sh /tmp/rootlens-offline-bundle/rootlens-docker-v0.1.0-preview.2.tar.gz
       - run: go build -o /tmp/rootlens ./cmd/rootlens
       - run: /tmp/rootlens demo --data /tmp/rootlens-demo --listen 127.0.0.1:8765 > /tmp/rootlens-demo.log 2>&1 &
       - run: npx playwright install --with-deps chromium && npm run test:e2e

@@ -5,6 +5,27 @@ modern Linux AMD64 or ARM64. Docker Engine and the Docker Compose plugin are
 required. This is a development preview; TerraMaster models and TOS versions have
 not yet been qualified. Missing PSI or cgroup capabilities are shown in the app.
 
+## Automated installation
+
+With Docker and Compose installed, Linux users can run the one-command installer:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh
+```
+
+It downloads a pinned bundle, verifies its checksum, initializes HTTPS and enrolls
+a local agent. It prints the dashboard URL and the CA certificate to trust. Create
+your administrator account in the browser using the private setup token. Add
+`-s -- --docker` after `sudo sh` to opt into the restricted Docker proxy.
+
+For a particular NAS folder or LAN address, use `sudo sh -s -- --dir /path/to/rootlens
+--address 192.168.1.20`. The script requires an empty directory and preserves an
+existing installer-managed deployment on repeat runs. It does not upgrade or reset
+existing data. The bundled `install.sh` also supports `--help` and staged `--offline`
+installation; see the full installation guide for those options.
+
+The manual procedure below remains available for Docker Manager project imports.
+
 ## 1. Download and pull
 
 Extract the release ZIP into a private local folder on the machine being monitored.

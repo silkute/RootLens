@@ -39,13 +39,23 @@ func run() error {
 	listen := flags.String("listen", "127.0.0.1:8443", "Listener address")
 	origin := flags.String("origin", "https://localhost:8443", "Canonical browser origin")
 	names := flags.String("tls-names", "localhost,127.0.0.1", "Certificate DNS names and IPs")
-	destination := flags.String("output", "", "Backup destination")
+	destination := flags.String("output", "", "Backup destination or local agent configuration directory")
+	hostName := flags.String("host-name", "Local host", "Local agent display name")
+	docker := flags.Bool("docker", false, "Enable the restricted Docker proxy for the local agent")
+	check := flags.Bool("check", false, "Check local agent enrollment and telemetry")
+	finish := flags.Bool("finish", false, "Remove the consumed local enrollment token")
 	if e := flags.Parse(args); e != nil {
 		return e
 	}
 	if command == "version" {
 		fmt.Println(protocol.Version)
 		return nil
+	}
+	if command == "local-agent" {
+		if *destination == "" || (*check && *finish) {
+			return fmt.Errorf("local-agent requires --output; --check and --finish are mutually exclusive")
+		}
+		return hub.LocalAgent(context.Background(), *data, *destination, *hostName, *docker, *check, *finish)
 	}
 	if command == "init" {
 		u, e := url.Parse(*origin)
@@ -59,7 +69,7 @@ func run() error {
 		return nil
 	}
 	if command != "serve" && command != "demo" && command != "backup" {
-		return fmt.Errorf("usage: rootlens init|serve|demo|backup|version")
+		return fmt.Errorf("usage: rootlens init|serve|demo|backup|local-agent|version")
 	}
 	if command == "demo" {
 		host, _, e := net.SplitHostPort(*listen)
