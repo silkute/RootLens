@@ -61,7 +61,7 @@ jobs:
       - run: /tmp/rootlens demo --data /tmp/rootlens-demo --listen 127.0.0.1:8765 > /tmp/rootlens-demo.log 2>&1 &
       - run: npx playwright install --with-deps chromium && npm run test:e2e
         working-directory: web
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: browser-report
