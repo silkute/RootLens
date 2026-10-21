@@ -58,6 +58,11 @@ The built dashboard is embedded in the hub. No Node runtime is needed in product
 
 ## Install
 
+Download the versioned **Docker installation ZIP** from
+[Releases](https://github.com/silkute/RootLens/releases), extract it, and follow its
+`INSTALL.md`. The bundle uses prebuilt AMD64/ARM64 images from GHCR; no source build
+is needed. HTTPS initialization and host enrollment remain explicit setup steps.
+
 See [installation](docs/installation.md) for TLS trust, Compose enrollment, binary
 deployment and optional Docker access. Start with one noncritical Linux machine.
 Modern Linux with PSI and cgroups v2 is the primary diagnostic target. Older kernels

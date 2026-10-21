@@ -14,7 +14,7 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    tmpfs: [/tmp:size=16m,noexec,nosuid]
+    tmpfs: ["/tmp:size=16m,noexec,nosuid"]
     healthcheck:
       test: [CMD, rootlens, version]
       interval: 30s
@@ -39,7 +39,7 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    tmpfs: [/tmp:size=8m,noexec,nosuid]
+    tmpfs: ["/tmp:size=8m,noexec,nosuid"]
   docker-proxy:
     profiles: [docker]
     image: haproxy:3.2.11-alpine
@@ -53,7 +53,7 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    tmpfs: [/tmp:size=8m,noexec,nosuid]
+    tmpfs: ["/tmp:size=8m,noexec,nosuid"]
 volumes:
   hub-data:
   agent-state:

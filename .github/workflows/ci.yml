@@ -17,6 +17,22 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - name: Validate pull-only installation bundle
+        run: |
+          sh deploy/package-install.sh v0.1.0-preview.1 /tmp/rootlens-install
+          unzip -q /tmp/rootlens-install/rootlens-docker-v0.1.0-preview.1.zip -d /tmp/rootlens-install/extracted
+          docker compose -f /tmp/rootlens-install/extracted/rootlens/compose.yml --profile docker config --format json > /tmp/rootlens-install/compose.json
+          python3 - <<'PY'
+          import json
+          with open('/tmp/rootlens-install/compose.json') as f:
+              services = json.load(f)['services']
+          assert all('build' not in service for service in services.values())
+          for target in ('hub', 'agent'):
+              assert services[target]['image'] == f'ghcr.io/silkute/rootlens-{target}:v0.1.0-preview.1'
+              assert services[target]['read_only']
+              assert not services[target].get('privileged', False)
+          assert services['docker-proxy']['network_mode'] == 'none'
+          PY
       - run: npm ci && npm run build
         working-directory: web
       - run: go run ./cmd/contracts && git diff --exit-code -- api web/src/contracts.generated.ts
