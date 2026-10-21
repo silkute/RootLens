@@ -78,8 +78,9 @@ the metric, event, metadata-history or report tables. Never collect argv or envi
 
 ## Release packaging (maintainers and installers)
 
-`sh deploy/package-install.sh vVERSION OUTPUT_DIRECTORY` creates ZIP and tar.gz
-installation bundles, returning a nonzero exit status on invalid input or failure.
+`sh deploy/package-install.sh vVERSION OUTPUT_DIRECTORY` creates ZIP, tar.gz and
+standalone `install.sh` artifacts, returning a nonzero exit status on invalid input
+or failure. Both copies of the installer are pinned to the supplied version.
 The version must be a container-tag-safe string beginning with `v` and a digit.
 Callers provide `zip` and `tar`, then publish the bundles with the matching hub and
 agent image tags. The release workflow builds Linux AMD64/ARM64 images, signs their
@@ -89,8 +90,31 @@ packages must be made public in package settings before advertising anonymous pu
 Installers use the bundle's `compose.yml`, or `deploy/compose.install.yml`, to pull
 version-pinned images without build tools. `ROOTLENS_BIND_IP` defaults to loopback;
 LAN callers must set the actual interface IP and use the same HTTPS origin and
-certificate names during initialization. Keep `agent/`, the proxy policy and named
+certificate names during initialization. `ROOTLENS_PORT` defaults to 8443 and must
+match the origin's port. Keep `agent/`, the proxy policy and named
 volumes when upgrading. The source-development Compose file remains independent.
+
+`sh install.sh [--dir PATH] [--address IPV4] [--port PORT] [--docker] [--offline BUNDLE]`
+is the Linux/root installer. Docker Engine, Compose and the listed shell utilities
+must already exist. It uses a local Unix socket, checks the pinned release's bundle
+hash, initializes TLS and enrolls one local agent before returning success. Exit
+status is nonzero on failure; rerun with the same directory to resume. It preserves
+existing identity/configuration, refuses conflicting or unrelated installations,
+and does not perform upgrades. Offline callers stage SHA256SUMS beside the bundle
+and preload every required image. Docker monitoring requires explicit `--docker`.
+
+`rootlens local-agent --data HUB_DIR --output AGENT_DIR [--host-name NAME] [--docker]`
+prepares the installer's container configuration and ten-minute enrollment token.
+This local-only CLI requires access to the hub's bootstrap secret, a stopped hub
+and agent, and a private output directory writable by UID 10001. It refuses new
+enrollment after administrator setup and preserves an already-enrolled agent.
+Agents still generate/persist their own credentials and enroll through the existing
+verified HTTPS endpoint. No new remote endpoint or agent privilege is introduced.
+`--check` returns success only for an active credential with recent committed
+telemetry; it may run while the hub serves. After stopping the agent, `--finish`
+removes the consumed enrollment token and its configuration field. Checks/finish
+require the same private config mount, but no bootstrap secret. Neither mode emits
+credentials. Use Settings for additional hosts or revoked-agent replacements.
 
 ## Applicable review checklist
 

@@ -1,5 +1,59 @@
 # Installation and operations
 
+## One-command installation
+
+Install Docker Engine and the Docker Compose plugin first. On TerraMaster, install
+Docker Manager and enable SSH to run this command as a Docker administrator. The
+installer requires root for private file ownership, Linux AMD64/ARM64, and a local
+Docker Unix socket. It does not install system packages or change firewall rules.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh
+```
+
+Inspect the script before executing it if desired. The script pins its release,
+downloads over verified HTTPS, and checks the bundle's SHA-256 against the release
+manifest. It initializes TLS, prepares a host-bound enrollment, starts the hub and
+agent, and waits for fresh telemetry. It removes the consumed enrollment token.
+The administrator account is still created through the browser; its password is
+never passed to the shell. Trust the printed CA certificate on that device first.
+The setup token is displayed only through an interactive terminal and retained in
+the installation's root-readable `setup.token`; it is not placed in a URL or logs.
+
+Default directory: `./rootlens`; port: 8443; address: the IPv4 source selected by
+the local default route, falling back to the first `hostname -I` address. No packet
+is sent to the route-lookup destination. On hosts with multiple interfaces, specify
+the intended LAN address. Use a dedicated empty folder on local NAS storage:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh -s -- --dir /path/to/rootlens --address 192.168.1.20 --port 8443
+```
+
+Add `--docker` only when opting into container monitoring through the restricted
+proxy. By default the proxy is not started and the agent receives no Docker socket.
+The proxy retains powerful access to the real Docker socket; see the section below.
+
+Each installation uses a distinct Compose project derived from its directory.
+Repeat runs resume the same version and retain accounts, CA, host identity, agent
+credentials and configuration. Conflicting address/port/profile changes are refused.
+An existing nonempty directory without an installer marker is left untouched. This
+command is not an upgrade or reset command; follow the backup/upgrade procedure.
+After an interruption, rerun with the same directory and options. If the process was
+forcibly killed, first ensure it stopped, then remove its empty `.install-lock`
+directory. A revoked agent is not silently granted access again after account setup.
+
+For staged, offline installation, download the release's `install.sh`, tar.gz bundle
+and `SHA256SUMS`, and preload the matching images using `docker load`. Put the
+checksum manifest beside the bundle, then run:
+
+```sh
+sudo sh install.sh --dir /path/to/rootlens --address 192.168.1.20 --offline /path/to/rootlens-docker-v0.1.0-preview.2.tar.gz
+```
+
+Offline mode never pulls images; `--docker` additionally requires the pinned proxy
+image to be preloaded. Native ARM64 and TerraMaster device qualification remain
+outstanding; a Linux CI install does not qualify every NAS/kernel combination.
+
 ## Binary installation
 
 Build as described in the README, or verify checksums and signatures on published

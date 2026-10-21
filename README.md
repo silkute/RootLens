@@ -58,6 +58,22 @@ The built dashboard is embedded in the hub. No Node runtime is needed in product
 
 ## Install
 
+With Docker Engine and the Compose plugin already installed on a Linux AMD64 or
+ARM64 host, run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh
+```
+
+The installer downloads a pinned preview, verifies the bundle checksum, initializes
+HTTPS and enrolls a local agent. It uses `./rootlens`, detects a local IPv4 address
+and prints the dashboard URL and CA certificate location. Trust that certificate
+on your browser device, then create your administrator account using the one-time
+token shown only on an interactive terminal (also saved privately as `setup.token`).
+Docker container monitoring is opt-in: add `-s -- --docker` after `sudo sh`.
+See [installer options](docs/installation.md#one-command-installation) for a custom
+NAS folder, address, port, offline installation and repeat-run behavior.
+
 Download the versioned **Docker installation ZIP** from
 [Releases](https://github.com/silkute/RootLens/releases), extract it, and follow its
 `INSTALL.md`. The bundle uses prebuilt AMD64/ARM64 images from GHCR; no source build

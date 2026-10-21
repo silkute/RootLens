@@ -10,9 +10,9 @@ esac
 case "$version" in
   *[!A-Za-z0-9._-]*) echo 'Invalid version characters' >&2; exit 1 ;;
 esac
-root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 mkdir -p "$output"
-output=$(CDPATH= cd -- "$output" && pwd)
+output=$(CDPATH='' cd -- "$output" && pwd)
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT HUP INT TERM
 mkdir "$stage/rootlens"
@@ -20,5 +20,7 @@ sed "s|ghcr.io/silkute/rootlens-hub:[^[:space:]]*|ghcr.io/silkute/rootlens-hub:$
   "$root/deploy/compose.install.yml" > "$stage/rootlens/compose.yml"
 cp "$root/deploy/haproxy.cfg" "$root/deploy/agent.example.json" "$root/deploy/INSTALL.md" "$stage/rootlens/"
 cp "$root/LICENSE" "$root/THIRD_PARTY_NOTICES.md" "$stage/rootlens/"
+sed "s|^  VERSION='[^']*'|  VERSION='$version'|" "$root/install.sh" > "$stage/rootlens/install.sh"
+cp "$stage/rootlens/install.sh" "$output/install.sh"
 (cd "$stage" && zip -qr "$output/rootlens-docker-$version.zip" rootlens)
 tar -czf "$output/rootlens-docker-$version.tar.gz" -C "$stage" rootlens
