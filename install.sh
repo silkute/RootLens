@@ -47,6 +47,7 @@ main() {
   [ -n "$directory" ] && [ "$directory" != / ] && [ ! -L "$directory" ] || { echo 'Choose an installation directory, not a root path or symbolic link.' >&2; exit 1; }
   mkdir -p "$directory"
   directory=$(CDPATH='' cd -- "$directory" && pwd -P)
+  [ "$directory" != / ] || { echo 'The filesystem root cannot be an installation directory.' >&2; exit 1; }
   [ "$(stat -c %u "$directory")" = 0 ] || { echo 'The installation directory must be owned by root.' >&2; exit 1; }
   marker="$directory/.rootlens-install"
   if [ -f "$marker" ]; then
