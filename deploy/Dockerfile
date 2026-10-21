@@ -16,7 +16,7 @@ COPY --from=web /src/internal/hub/static ./internal/hub/static
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/rootlens ./cmd/rootlens && \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/rootlens-agent ./cmd/rootlens-agent
 
-FROM alpine:3.23.2 AS hub
+FROM alpine:3.24.2 AS hub
 ARG VERSION=dev
 ARG REVISION=unknown
 LABEL org.opencontainers.image.source="https://github.com/silkute/RootLens" \
@@ -34,7 +34,7 @@ EXPOSE 8443
 ENTRYPOINT ["rootlens"]
 CMD ["serve", "--data", "/data", "--listen", "0.0.0.0:8443"]
 
-FROM alpine:3.23.2 AS agent
+FROM alpine:3.24.2 AS agent
 ARG VERSION=dev
 ARG REVISION=unknown
 LABEL org.opencontainers.image.source="https://github.com/silkute/RootLens" \
