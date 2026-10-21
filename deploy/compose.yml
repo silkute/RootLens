@@ -8,7 +8,8 @@ services:
       target: hub
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8443:8443"
+      - "${ROOTLENS_BIND_IP:-127.0.0.1}:${ROOTLENS_PORT:-8443}:${ROOTLENS_INTERNAL_PORT:-8443}"
+    command: [serve, --data, /data, --listen, "0.0.0.0:${ROOTLENS_INTERNAL_PORT:-8443}"]
     volumes:
       - hub-data:/data
     read_only: true

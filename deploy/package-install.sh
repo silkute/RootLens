@@ -19,6 +19,7 @@ mkdir "$stage/rootlens"
 sed "s|ghcr.io/silkute/rootlens-hub:[^[:space:]]*|ghcr.io/silkute/rootlens-hub:$version|; s|ghcr.io/silkute/rootlens-agent:[^[:space:]]*|ghcr.io/silkute/rootlens-agent:$version|" \
   "$root/deploy/compose.install.yml" > "$stage/rootlens/compose.yml"
 cp "$root/deploy/haproxy.cfg" "$root/deploy/agent.example.json" "$root/deploy/INSTALL.md" "$stage/rootlens/"
+cp "$root/deploy/.env.example" "$stage/rootlens/.env.example"
 cp "$root/LICENSE" "$root/THIRD_PARTY_NOTICES.md" "$stage/rootlens/"
 sed "s|^  VERSION='[^']*'|  VERSION='$version'|" "$root/install.sh" > "$stage/rootlens/install.sh"
 cp "$stage/rootlens/install.sh" "$output/install.sh"

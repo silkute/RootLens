@@ -24,6 +24,11 @@ existing installer-managed deployment on repeat runs. It does not upgrade or res
 existing data. The bundled `install.sh` also supports `--help` and staged `--offline`
 installation; see the full installation guide for those options.
 
+The installer asks for the HTTPS port, defaulting to 8443 (or the saved port).
+Use `--port 9443` to select it without a prompt. Rerun with the same `--dir` and a
+new `--port` to change the public binding and local endpoints while preserving data.
+Use `--non-interactive` for unattended runs. Agents have no incoming port.
+
 The manual procedure below remains available for Docker Manager project imports.
 
 ## 1. Download and pull
@@ -37,10 +42,13 @@ Create `.env` with your NAS's LAN IP, for example:
 
 ```text
 ROOTLENS_BIND_IP=192.168.1.20
+ROOTLENS_PORT=9443
 ```
 
-This publishes port 8443 on that address. Without it, the dashboard is accessible
-only from the machine itself. Do not forward this port through your router.
+This publishes your chosen HTTPS port on that address. Without the address setting,
+the dashboard is accessible only from the machine itself. `ROOTLENS_INTERNAL_PORT`
+optionally changes the container listener (default 8443); public URLs always use
+`ROOTLENS_PORT`. Do not forward the dashboard through your router.
 
 ```sh
 docker compose pull hub agent
@@ -54,7 +62,7 @@ needed. Do not replace the version with `latest`.
 Replace `192.168.1.20` below with the same NAS IP used in `.env`:
 
 ```sh
-docker compose run --rm hub init --data /data --origin https://192.168.1.20:8443 --tls-names localhost,127.0.0.1,192.168.1.20
+docker compose run --rm hub init --data /data --origin https://192.168.1.20:9443 --tls-names localhost,127.0.0.1,192.168.1.20
 docker compose up -d hub
 mkdir -p agent
 docker compose cp hub:/data/ca.pem ./agent/ca.pem
@@ -62,7 +70,7 @@ docker compose cp hub:/data/setup.token ./setup.token
 ```
 
 Install the public `agent/ca.pem` certificate in your browser/device trust store.
-Open `https://192.168.1.20:8443`, enter the secret from `setup.token`, and create the
+Open your chosen URL (`https://192.168.1.20:9443` in this example), enter the secret from `setup.token`, and create the
 administrator account. Keep tokens private and remove `setup.token` after setup.
 Never copy the CA private key to the agent or bypass TLS verification.
 
@@ -71,7 +79,7 @@ Never copy the CA private key to the agent or bypass TLS verification.
 In Settings, add a host and create an enrollment token. It expires in ten minutes.
 Copy `agent.example.json` to `agent/agent.json` and set:
 
-- `hub` to `https://192.168.1.20:8443` using your actual IP.
+- `hub` to `https://192.168.1.20:9443` using your actual IP and chosen public port.
 - `host_id` to the new host ID shown in Settings.
 
 Save the token, without quotes, as `agent/enrollment.token`. The container runs as

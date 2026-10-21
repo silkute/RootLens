@@ -91,17 +91,37 @@ Installers use the bundle's `compose.yml`, or `deploy/compose.install.yml`, to p
 version-pinned images without build tools. `ROOTLENS_BIND_IP` defaults to loopback;
 LAN callers must set the actual interface IP and use the same HTTPS origin and
 certificate names during initialization. `ROOTLENS_PORT` defaults to 8443 and must
-match the origin's port. Keep `agent/`, the proxy policy and named
+match the public origin's port. Both Compose variants also use
+`ROOTLENS_INTERNAL_PORT` (default 8443) for their container listener and target;
+it may differ from the public port. Native serving uses `--listen` or the fallback
+`ROOTLENS_LISTEN`; the systemd example reads `/etc/rootlens/hub.env`. Keep `agent/`, the proxy policy and named
 volumes when upgrading. The source-development Compose file remains independent.
 
-`sh install.sh [--dir PATH] [--address IPV4] [--port PORT] [--docker] [--offline BUNDLE]`
+`sh install.sh [--dir PATH] [--address IPV4] [--port PORT] [--non-interactive] [--docker] [--offline BUNDLE]`
 is the Linux/root installer. Docker Engine, Compose and the listed shell utilities
 must already exist. It uses a local Unix socket, checks the pinned release's bundle
 hash, initializes TLS and enrolls one local agent before returning success. Exit
 status is nonzero on failure; rerun with the same directory to resume. It preserves
-existing identity/configuration, refuses conflicting or unrelated installations,
-and does not perform upgrades. Offline callers stage SHA256SUMS beside the bundle
+existing identities and service versions, refuses unrelated installations or
+address/profile conflicts, and does not perform upgrades. With a terminal it asks
+for the HTTPS port, including when stdin is a pipe. `--port` overrides the prompt;
+`--non-interactive` uses supplied/default/saved values and never displays tokens.
+Port values must be decimal 1–65535, without leading zeroes. A changed port is
+probed before services stop, then saved in `.env`, hub/agent endpoints and the
+installer marker. `.port-change` records an unfinished change; retry that same
+port to finish it. Preview.2 service images stay pinned when the current helper
+reconfigures their port. Offline callers stage SHA256SUMS beside the bundle
 and preload every required image. Docker monitoring requires explicit `--docker`.
+Older deployments also need the current helper hub image for offline port changes.
+
+`rootlens set-port --data HUB_DIR [--output AGENT_DIR] --port PORT` updates only the
+saved HTTPS origin and optional local agent's matching hub URL. Stop both services
+first; callers must also update their listener/Compose public binding and any
+remote agents' local configuration. It returns the new origin or an error and
+preserves CA, secrets, identities, database and unrelated config fields. Retry the
+same port after interruption. `NormalizeHTTPSOrigin(value)` validates an HTTPS
+origin and omits default port 443 to match browser serialization; initialization
+and serving use this same normalization. Certificates name hosts, not ports.
 
 `rootlens local-agent --data HUB_DIR --output AGENT_DIR [--host-name NAME] [--docker]`
 prepares the installer's container configuration and ten-minute enrollment token.

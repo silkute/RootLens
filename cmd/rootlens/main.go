@@ -9,7 +9,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -36,7 +35,11 @@ func run() error {
 	}
 	flags := flag.NewFlagSet("rootlens "+command, flag.ContinueOnError)
 	data := flags.String("data", "data", "Private local data directory")
-	listen := flags.String("listen", "127.0.0.1:8443", "Listener address")
+	defaultListen := os.Getenv("ROOTLENS_LISTEN")
+	if defaultListen == "" {
+		defaultListen = "127.0.0.1:8443"
+	}
+	listen := flags.String("listen", defaultListen, "Listener address (or ROOTLENS_LISTEN)")
 	origin := flags.String("origin", "https://localhost:8443", "Canonical browser origin")
 	names := flags.String("tls-names", "localhost,127.0.0.1", "Certificate DNS names and IPs")
 	destination := flags.String("output", "", "Backup destination or local agent configuration directory")
@@ -44,12 +47,20 @@ func run() error {
 	docker := flags.Bool("docker", false, "Enable the restricted Docker proxy for the local agent")
 	check := flags.Bool("check", false, "Check local agent enrollment and telemetry")
 	finish := flags.Bool("finish", false, "Remove the consumed local enrollment token")
+	port := flags.Int("port", 0, "New public HTTPS port for set-port")
 	if e := flags.Parse(args); e != nil {
 		return e
 	}
 	if command == "version" {
 		fmt.Println(protocol.Version)
 		return nil
+	}
+	if command == "set-port" {
+		origin, err := hub.SetPort(*data, *destination, *port)
+		if err == nil {
+			fmt.Println("Saved HTTPS endpoint:", origin)
+		}
+		return err
 	}
 	if command == "local-agent" {
 		if *destination == "" || (*check && *finish) {
@@ -58,18 +69,14 @@ func run() error {
 		return hub.LocalAgent(context.Background(), *data, *destination, *hostName, *docker, *check, *finish)
 	}
 	if command == "init" {
-		u, e := url.Parse(*origin)
-		if e != nil || u.Scheme != "https" || u.Host == "" {
-			return fmt.Errorf("origin must be an HTTPS origin")
-		}
-		if e = hub.Initialize(*data, *origin, strings.Split(*names, ",")); e != nil {
+		if e := hub.Initialize(*data, *origin, strings.Split(*names, ",")); e != nil {
 			return e
 		}
 		fmt.Printf("Initialized %s. Trust ca.pem, then read setup.token locally to create the administrator. Keep all private files protected.\n", *data)
 		return nil
 	}
 	if command != "serve" && command != "demo" && command != "backup" {
-		return fmt.Errorf("usage: rootlens init|serve|demo|backup|local-agent|version")
+		return fmt.Errorf("usage: rootlens init|serve|demo|backup|local-agent|set-port|version")
 	}
 	if command == "demo" {
 		host, _, e := net.SplitHostPort(*listen)
@@ -109,7 +116,10 @@ func run() error {
 		if e = json.Unmarshal(b, &config); e != nil {
 			return e
 		}
-		h.Origin = config.Origin
+		h.Origin, e = hub.NormalizeHTTPSOrigin(config.Origin)
+		if e != nil {
+			return e
+		}
 		h.BootstrapHash = config.BootstrapHash
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

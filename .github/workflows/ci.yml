@@ -21,7 +21,7 @@ jobs:
         run: |
           sh deploy/package-install.sh v0.1.0-preview.1 /tmp/rootlens-install
           unzip -q /tmp/rootlens-install/rootlens-docker-v0.1.0-preview.1.zip -d /tmp/rootlens-install/extracted
-          docker compose -f /tmp/rootlens-install/extracted/rootlens/compose.yml --profile docker config --format json > /tmp/rootlens-install/compose.json
+          ROOTLENS_PORT=10443 ROOTLENS_INTERNAL_PORT=19443 docker compose -f /tmp/rootlens-install/extracted/rootlens/compose.yml --profile docker config --format json > /tmp/rootlens-install/compose.json
           python3 - <<'PY'
           import json
           with open('/tmp/rootlens-install/compose.json') as f:
@@ -32,6 +32,9 @@ jobs:
               assert services[target]['read_only']
               assert not services[target].get('privileged', False)
           assert services['docker-proxy']['network_mode'] == 'none'
+          assert services['hub']['ports'][0]['published'] == '10443'
+          assert services['hub']['ports'][0]['target'] == 19443
+          assert services['hub']['command'][-1] == '0.0.0.0:19443'
           PY
       - run: npm ci && npm run build
         working-directory: web
@@ -45,12 +48,14 @@ jobs:
         run: shellcheck --shell=sh install.sh deploy/package-install.sh tests/install/smoke.sh
       - name: Exercise one-command installation
         run: |
-          docker build --target hub -f deploy/Dockerfile -t ghcr.io/silkute/rootlens-hub:v0.1.0-preview.2 .
-          docker build --target agent -f deploy/Dockerfile -t ghcr.io/silkute/rootlens-agent:v0.1.0-preview.2 .
-          sh deploy/package-install.sh v0.1.0-preview.2 /tmp/rootlens-offline-bundle
+          docker build --target hub -f deploy/Dockerfile -t ghcr.io/silkute/rootlens-hub:v0.1.0-preview.3 .
+          docker build --target agent -f deploy/Dockerfile -t ghcr.io/silkute/rootlens-agent:v0.1.0-preview.3 .
+          docker pull ghcr.io/silkute/rootlens-hub:v0.1.0-preview.2
+          docker pull ghcr.io/silkute/rootlens-agent:v0.1.0-preview.2
+          sh deploy/package-install.sh v0.1.0-preview.3 /tmp/rootlens-offline-bundle
           cd /tmp/rootlens-offline-bundle && sha256sum rootlens-docker-* > SHA256SUMS
           cd "$GITHUB_WORKSPACE"
-          sudo sh tests/install/smoke.sh /tmp/rootlens-offline-bundle/rootlens-docker-v0.1.0-preview.2.tar.gz
+          sudo sh tests/install/smoke.sh /tmp/rootlens-offline-bundle/rootlens-docker-v0.1.0-preview.3.tar.gz
       - run: go build -o /tmp/rootlens ./cmd/rootlens
       - run: /tmp/rootlens demo --data /tmp/rootlens-demo --listen 127.0.0.1:8765 > /tmp/rootlens-demo.log 2>&1 &
       - run: npx playwright install --with-deps chromium && npm run test:e2e

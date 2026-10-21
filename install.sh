@@ -3,7 +3,7 @@
 main() {
   set -eu
   umask 077
-  VERSION='v0.1.0-preview.2'
+  VERSION='v0.1.0-preview.3'
   directory="$PWD/rootlens"
   address=''
   port=8443
@@ -12,6 +12,7 @@ main() {
   address_set=0
   port_set=0
   docker_set=0
+  non_interactive=0
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --dir|--address|--port|--offline)
@@ -24,9 +25,11 @@ main() {
         esac
         shift 2 ;;
       --docker) docker_monitoring=1; docker_set=1; shift ;;
+      --non-interactive) non_interactive=1; shift ;;
       --help)
-        echo 'Usage: sh install.sh [--dir PATH] [--address LAN_IPV4] [--port PORT] [--docker] [--offline BUNDLE.tar.gz]'
-        echo 'Requires Linux, Docker Compose, and root. Existing installs are resumed, never upgraded or reset.'
+        echo 'Usage: sh install.sh [--dir PATH] [--address LAN_IPV4] [--port PORT] [--non-interactive] [--docker] [--offline BUNDLE.tar.gz]'
+        echo 'Choose the HTTPS port at the terminal, or supply --port. Repeat runs retain the saved port unless changed.'
+        echo 'Requires Linux, Docker Compose, and root. Existing service versions and data are preserved.'
         echo 'Offline mode requires SHA256SUMS beside the bundle and preloaded matching Docker images.'
         return 0 ;;
       *) echo "Unknown option: $1" >&2; exit 1 ;;
@@ -52,16 +55,18 @@ main() {
   [ "$directory" != / ] || { echo 'The filesystem root cannot be an installation directory.' >&2; exit 1; }
   [ "$(stat -c %u "$directory")" = 0 ] || { echo 'The installation directory must be owned by root.' >&2; exit 1; }
   marker="$directory/.rootlens-install"
+  installed_version=$VERSION
+  saved_port=''
   if [ -f "$marker" ]; then
-    [ "$(sed -n '1p' "$marker")" = "$VERSION" ] || { echo 'An existing installation uses a different version. Follow the upgrade guide; this installer will not replace it.' >&2; exit 1; }
+    installed_version=$(sed -n '1p' "$marker")
+    case "$installed_version" in "$VERSION"|v0.1.0-preview.2) ;; *) echo 'This installation version is not supported by this installer. Follow the upgrade guide.' >&2; exit 1 ;; esac
     saved_address=$(sed -n '2p' "$marker")
     saved_port=$(sed -n '3p' "$marker")
     saved_docker=$(sed -n '4p' "$marker")
     [ "$address_set" = 0 ] || [ "$address" = "$saved_address" ] || { echo 'Address conflicts with the existing installation.' >&2; exit 1; }
-    [ "$port_set" = 0 ] || [ "$port" = "$saved_port" ] || { echo 'Port conflicts with the existing installation.' >&2; exit 1; }
     [ "$docker_set" = 0 ] || [ "$saved_docker" = 1 ] || { echo 'Enable additional collectors through the documented configuration procedure.' >&2; exit 1; }
     address=$saved_address
-    port=$saved_port
+    if [ "$port_set" = 0 ]; then port=$saved_port; fi
     docker_monitoring=$saved_docker
   else
     [ -z "$(ls -A "$directory")" ] || { echo 'The directory is not empty. Choose a new folder; existing files will not be overwritten.' >&2; exit 1; }
@@ -74,10 +79,29 @@ main() {
   fi
   case "$address" in ''|*[!0-9.]*) echo 'Supply a local IPv4 address with --address.' >&2; exit 1 ;; esac
   printf '%s\n' "$address" | awk -F. 'NF!=4{exit 1} {for(i=1;i<=4;i++)if($i!~/^[0-9]+$/ || $i>255 || (length($i)>1 && substr($i,1,1)=="0"))exit 1; if($1<1 || $1>223)exit 1}' || { echo 'Supply a valid local IPv4 address with --address, for example --address 192.168.1.20.' >&2; exit 1; }
-  case "$port" in ''|0*|*[!0-9]*) echo 'Invalid port.' >&2; exit 1 ;; esac
-  if [ "${#port}" -gt 5 ] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
-    echo 'Port must be between 1 and 65535.' >&2; exit 1
+  valid_port() {
+    case "$1" in ''|0*|*[!0-9]*) return 1 ;; esac
+    [ "${#1}" -le 5 ] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+  }
+  pending="$directory/.port-change"
+  if [ -f "$pending" ]; then
+    pending_port=$(cat "$pending")
+    if [ "$port_set" = 1 ] && [ "$port" != "$pending_port" ]; then
+      echo "Resume the pending port change to $pending_port before selecting another port." >&2; exit 1
+    fi
+    port=$pending_port
+  elif [ "$port_set" = 0 ] && [ "$non_interactive" = 0 ] && ( : <>/dev/tty ) 2>/dev/null; then
+    while :; do
+      printf 'Dashboard HTTPS port [%s]: ' "$port" >/dev/tty
+      IFS= read -r selected_port </dev/tty || { echo 'Port selection cancelled.' >&2; exit 1; }
+      selected_port=${selected_port:-$port}
+      if valid_port "$selected_port"; then port=$selected_port; break; fi
+      printf 'Enter a port from 1 to 65535, without leading zeroes.\n' >/dev/tty
+    done
   fi
+  valid_port "$port" || { echo 'Port must be from 1 to 65535, without leading zeroes.' >&2; exit 1; }
+  origin="https://$address:$port"
+  if [ "$port" = 443 ]; then origin="https://$address"; fi
   case "$docker_monitoring" in 0|1) ;; *) echo 'Invalid installation marker.' >&2; exit 1 ;; esac
   chmod 700 "$directory"
   lock="$directory/.install-lock"
@@ -112,8 +136,8 @@ main() {
     [ "${#expected}" = 64 ] || { echo 'Missing or invalid bundle checksum.' >&2; exit 1; }
     actual=$(sha256sum "$stage/$bundle" | cut -d' ' -f1)
     [ "$actual" = "$expected" ] || { echo 'Bundle checksum mismatch. Installation stopped.' >&2; exit 1; }
-    tar -xzf "$stage/$bundle" -C "$stage" rootlens/compose.yml rootlens/haproxy.cfg rootlens/agent.example.json rootlens/INSTALL.md rootlens/LICENSE rootlens/THIRD_PARTY_NOTICES.md
-    for file in compose.yml haproxy.cfg agent.example.json INSTALL.md LICENSE THIRD_PARTY_NOTICES.md; do
+    tar -xzf "$stage/$bundle" -C "$stage" rootlens/compose.yml rootlens/haproxy.cfg rootlens/agent.example.json rootlens/INSTALL.md rootlens/LICENSE rootlens/THIRD_PARTY_NOTICES.md rootlens/.env.example
+    for file in compose.yml haproxy.cfg agent.example.json INSTALL.md LICENSE THIRD_PARTY_NOTICES.md .env.example; do
       cp "$stage/rootlens/$file" "$directory/$file"
     done
     printf 'ROOTLENS_BIND_IP=%s\nROOTLENS_PORT=%s\n' "$address" "$port" > "$directory/.env"
@@ -123,13 +147,45 @@ main() {
   if [ -z "$offline" ]; then
     if [ "$docker_monitoring" = 1 ]; then compose pull hub agent docker-proxy; else compose pull hub agent; fi
   fi
+  helper_image="ghcr.io/silkute/rootlens-hub:$VERSION"
+  reconfigure=0
+  if [ -n "$saved_port" ]; then
+    if [ "$saved_port" != "$port" ] || [ -f "$pending" ] || [ "$port_set" = 1 ]; then reconfigure=1; fi
+  fi
+  if [ -z "$saved_port" ] || [ "$reconfigure" = 1 ]; then
+    if [ -z "$offline" ] && [ "$installed_version" != "$VERSION" ]; then docker pull "$helper_image"; fi
+    # Docker checks the host-side binding, including ports below 1024. The probe
+    # has no application listener and exits immediately, releasing the binding.
+    if [ "$saved_port" != "$port" ]; then
+      docker run --rm --pull never --read-only --cap-drop ALL --security-opt no-new-privileges:true --publish "$address:$port:8443" --entrypoint sh "$helper_image" -c ':' || {
+        echo 'The selected address/port cannot be bound. Choose a free port with --port; existing services have not been stopped.' >&2; exit 1
+      }
+    fi
+  fi
+  if [ "$reconfigure" = 1 ]; then
+    printf '%s\n' "$port" > "$pending.new"
+    mv "$pending.new" "$pending"
+    compose stop agent hub
+    mkdir -p "$directory/agent"
+    chown 10001:10001 "$directory/agent"
+    chmod 700 "$directory/agent"
+    docker run --rm --pull never --read-only --cap-drop ALL --security-opt no-new-privileges:true --network none \
+      --mount "type=volume,source=${project}_hub-data,target=/data" \
+      --mount "type=bind,source=$directory/agent,target=/etc/rootlens" \
+      --entrypoint sh "$helper_image" -c 'if [ -f /data/hub.json ]; then exec rootlens set-port --data /data --output /etc/rootlens --port "$1"; fi' sh "$port"
+    awk -v port="$port" 'BEGIN{found=0} /^ROOTLENS_PORT=/{print "ROOTLENS_PORT="port;found=1;next} {print} END{if(!found)print "ROOTLENS_PORT="port}' "$directory/.env" > "$directory/.env.new"
+    mv "$directory/.env.new" "$directory/.env"
+    printf '%s\n%s\n%s\n%s\n' "$installed_version" "$address" "$port" "$docker_monitoring" > "$marker.new"
+    mv "$marker.new" "$marker"
+    rm -f "$pending"
+  fi
   if [ ! -f "$directory/.installed" ]; then
     compose stop agent hub
     mkdir -p "$directory/agent"
     chown 10001:10001 "$directory/agent"
     chmod 700 "$directory/agent"
     if ! compose run --rm -T --entrypoint sh hub -c 'test -f /data/hub.json'; then
-      compose run --rm -T hub init --data /data --origin "https://$address:$port" --tls-names "localhost,127.0.0.1,$address"
+      compose run --rm -T hub init --data /data --origin "$origin" --tls-names "localhost,127.0.0.1,$address"
     fi
     host_name=$(hostname | cut -c1-100)
     if [ "$docker_monitoring" = 1 ]; then
@@ -145,7 +201,7 @@ main() {
     attempt=0
     while [ "$attempt" -lt 60 ]; do
       attempt=$((attempt + 1))
-      if curl --fail --silent --show-error --noproxy '*' --cacert "$directory/ca.pem" --connect-timeout 2 --max-time 3 "https://$address:$port/api/v1/me" -o /dev/null 2>/dev/null; then ready=1; break; fi
+      if curl --fail --silent --show-error --noproxy '*' --cacert "$directory/ca.pem" --connect-timeout 2 --max-time 3 "$origin/api/v1/me" -o /dev/null 2>/dev/null; then ready=1; break; fi
       sleep 1
     done
     [ "$ready" = 1 ] || { echo 'HTTPS startup failed. Check the address, port and system clock. Your data is preserved; rerun to resume.' >&2; exit 1; }
@@ -161,15 +217,25 @@ main() {
     compose stop agent
     compose run --rm -T -v "$directory/agent:/etc/rootlens" hub local-agent --data /data --output /etc/rootlens --finish
     compose up -d agent
-    printf '%s\n' "$VERSION" > "$directory/.installed"
+    printf '%s\n' "$installed_version" > "$directory/.installed"
   else
     if [ "$docker_monitoring" = 1 ]; then compose up -d hub docker-proxy agent; else compose up -d hub agent; fi
   fi
-  printf '\nRootLens is running: https://%s:%s\n' "$address" "$port"
+  if [ "$reconfigure" = 1 ]; then
+    ready=0
+    attempt=0
+    while [ "$attempt" -lt 30 ]; do
+      attempt=$((attempt + 1))
+      if curl --fail --silent --show-error --noproxy '*' --cacert "$directory/ca.pem" --connect-timeout 2 --max-time 3 "$origin/api/v1/me" -o /dev/null 2>/dev/null; then ready=1; break; fi
+      sleep 1
+    done
+    [ "$ready" = 1 ] || { echo 'The new HTTPS endpoint is not ready. Data is preserved; rerun with the same --port to resume.' >&2; exit 1; }
+  fi
+  printf '\nRootLens is running: %s\n' "$origin"
   printf 'Trust the local CA certificate on your browser device: %s/ca.pem\n' "$directory"
   printf 'Open the dashboard; on first use, create your administrator account. Setup token: %s/setup.token\n' "$directory"
   printf 'Installation files and volumes are preserved on repeat runs. Guide: %s/INSTALL.md\n' "$directory"
-  if [ ! -f "$directory/.account-notice" ] && ( : >/dev/tty ) 2>/dev/null; then
+  if [ "$non_interactive" = 0 ] && [ ! -f "$directory/.account-notice" ] && ( : >/dev/tty ) 2>/dev/null; then
     { printf '\nRootLens one-time setup token (keep private): '; cat "$directory/setup.token"; } >/dev/tty
     touch "$directory/.account-notice"
   fi

@@ -1,10 +1,11 @@
 name: rootlens
 services:
   hub:
-    image: ghcr.io/silkute/rootlens-hub:v0.1.0-preview.2
+    image: ghcr.io/silkute/rootlens-hub:v0.1.0-preview.3
     restart: unless-stopped
     ports:
-      - "${ROOTLENS_BIND_IP:-127.0.0.1}:${ROOTLENS_PORT:-8443}:8443"
+      - "${ROOTLENS_BIND_IP:-127.0.0.1}:${ROOTLENS_PORT:-8443}:${ROOTLENS_INTERNAL_PORT:-8443}"
+    command: [serve, --data, /data, --listen, "0.0.0.0:${ROOTLENS_INTERNAL_PORT:-8443}"]
     volumes:
       - hub-data:/data
     read_only: true
@@ -17,7 +18,7 @@ services:
       timeout: 5s
       retries: 3
   agent:
-    image: ghcr.io/silkute/rootlens-agent:v0.1.0-preview.2
+    image: ghcr.io/silkute/rootlens-agent:v0.1.0-preview.3
     restart: unless-stopped
     network_mode: host
     cgroup: host

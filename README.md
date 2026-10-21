@@ -67,12 +67,23 @@ curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | 
 
 The installer downloads a pinned preview, verifies the bundle checksum, initializes
 HTTPS and enrolls a local agent. It uses `./rootlens`, detects a local IPv4 address
-and prints the dashboard URL and CA certificate location. Trust that certificate
+and asks which HTTPS port to use (Enter keeps 8443, or the saved port on repeat
+runs). It prints the dashboard URL and CA certificate location. Trust that certificate
 on your browser device, then create your administrator account using the one-time
 token shown only on an interactive terminal (also saved privately as `setup.token`).
 Docker container monitoring is opt-in: add `-s -- --docker` after `sudo sh`.
 See [installer options](docs/installation.md#one-command-installation) for a custom
 NAS folder, address, port, offline installation and repeat-run behavior.
+
+Choose a port without a prompt, or change an existing install's port:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh -s -- --port 9443
+```
+
+Use the original `--dir` when changing a non-default installation. `--non-interactive`
+keeps defaults/saved values without terminal prompts. Both Compose variants expose
+`ROOTLENS_PORT`; native binaries accept `--listen` or `ROOTLENS_LISTEN`.
 
 Download the versioned **Docker installation ZIP** from
 [Releases](https://github.com/silkute/RootLens/releases), extract it, and follow its
