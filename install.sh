@@ -44,7 +44,9 @@ main() {
   context_endpoint=$(docker context inspect --format '{{.Endpoints.docker.Host}}')
   case "$context_endpoint" in unix:///*) ;; *) echo 'Select a local Docker context before installing.' >&2; exit 1 ;; esac
   [ "$(docker info --format '{{.OSType}}')" = linux ] || { echo 'A running Linux Docker Engine is required.' >&2; exit 1; }
-  [ -n "$directory" ] && [ "$directory" != / ] && [ ! -L "$directory" ] || { echo 'Choose an installation directory, not a root path or symbolic link.' >&2; exit 1; }
+  if [ -z "$directory" ] || [ "$directory" = / ] || [ -L "$directory" ]; then
+    echo 'Choose an installation directory, not a root path or symbolic link.' >&2; exit 1
+  fi
   mkdir -p "$directory"
   directory=$(CDPATH='' cd -- "$directory" && pwd -P)
   [ "$directory" != / ] || { echo 'The filesystem root cannot be an installation directory.' >&2; exit 1; }
@@ -73,7 +75,9 @@ main() {
   case "$address" in ''|*[!0-9.]*) echo 'Supply a local IPv4 address with --address.' >&2; exit 1 ;; esac
   printf '%s\n' "$address" | awk -F. 'NF!=4{exit 1} {for(i=1;i<=4;i++)if($i!~/^[0-9]+$/ || $i>255 || (length($i)>1 && substr($i,1,1)=="0"))exit 1; if($1<1 || $1>223)exit 1}' || { echo 'Supply a valid local IPv4 address with --address, for example --address 192.168.1.20.' >&2; exit 1; }
   case "$port" in ''|0*|*[!0-9]*) echo 'Invalid port.' >&2; exit 1 ;; esac
-  [ "${#port}" -le 5 ] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ] || { echo 'Port must be between 1 and 65535.' >&2; exit 1; }
+  if [ "${#port}" -gt 5 ] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+    echo 'Port must be between 1 and 65535.' >&2; exit 1
+  fi
   case "$docker_monitoring" in 0|1) ;; *) echo 'Invalid installation marker.' >&2; exit 1 ;; esac
   chmod 700 "$directory"
   lock="$directory/.install-lock"
