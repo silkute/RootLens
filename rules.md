@@ -103,9 +103,17 @@ must already exist. It uses a local Unix socket, checks the pinned release's bun
 hash, initializes TLS and enrolls one local agent before returning success. Exit
 status is nonzero on failure; rerun with the same directory to resume. It preserves
 existing identities and service versions, refuses unrelated installations or
-address/profile conflicts, and does not perform upgrades. With a terminal it asks
+address conflicts, and does not perform upgrades. Without `--dir`, it uses the
+current/default managed directory or finds one from the RootLens hub's Compose
+working-directory label and private installer marker. It refuses ambiguous matches.
+With a terminal it asks
 for the HTTPS port, including when stdin is a pipe. `--port` overrides the prompt;
 `--non-interactive` uses supplied/default/saved values and never displays tokens.
+It also requires an explicit y/n choice for Docker monitoring when not already
+enabled; `--docker` opts in without prompting, including on existing deployments.
+The installer configures the existing local agent, starts the restricted proxy and
+waits for committed, fresh Docker availability. `.docker-enable` retains an explicit
+opt-in across interruption. It preserves identity, credentials, data and port.
 Port values must be decimal 1–65535, without leading zeroes. A changed port is
 probed before services stop, then saved in `.env`, hub/agent endpoints and the
 installer marker. `.port-change` records an unfinished change; retry that same
@@ -113,6 +121,16 @@ port to finish it. Preview.2 service images stay pinned when the current helper
 reconfigures their port. Offline callers stage SHA256SUMS beside the bundle
 and preload every required image. Docker monitoring requires explicit `--docker`.
 Older deployments also need the current helper hub image for offline port changes.
+Enabling/checking Docker on an older deployment also needs the current helper image
+and the pinned HAProxy image preloaded in offline mode.
+
+`rootlens enable-docker --output AGENT_DIR` atomically selects the restricted proxy
+socket in an existing, valid agent config. Stop the agent first and explicitly opt
+into deploying the proxy. Other fields and credentials are preserved; a custom
+Docker endpoint is refused. `--check --data HUB_DIR` instead checks the configured
+host's recent committed Docker capability without changing configuration. An empty
+but healthy inventory is valid; absent, failed or stale collection returns an error.
+This is a local CLI only, not a hub API that can grant host access remotely.
 
 `rootlens set-port --data HUB_DIR [--output AGENT_DIR] --port PORT` updates only the
 saved HTTPS origin and optional local agent's matching hub URL. Stop both services

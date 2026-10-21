@@ -14,9 +14,20 @@ curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | 
 ```
 
 It downloads a pinned bundle, verifies its checksum, initializes HTTPS and enrolls
-a local agent. It prints the dashboard URL and the CA certificate to trust. Create
-your administrator account in the browser using the private setup token. Add
-`-s -- --docker` after `sudo sh` to opt into the restricted Docker proxy.
+a local agent. It asks whether to monitor Docker containers and prints the dashboard
+URL and the CA certificate to trust. Create
+your administrator account in the browser using the private setup token.
+
+If the dashboard says Docker monitoring is not configured, run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh -s -- --docker --non-interactive
+```
+
+The installer finds an existing installer-managed deployment using Docker metadata;
+you do not need to remember its folder. It enables the restricted proxy and checks
+collection without replacing accounts, agent credentials, history or selected ports.
+Several existing installations require an explicit `--dir` to choose one safely.
 
 For a particular NAS folder or LAN address, use `sudo sh -s -- --dir /path/to/rootlens
 --address 192.168.1.20`. The script requires an empty directory and preserves an

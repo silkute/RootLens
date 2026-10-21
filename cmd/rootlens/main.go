@@ -55,6 +55,15 @@ func run() error {
 		fmt.Println(protocol.Version)
 		return nil
 	}
+	if command == "enable-docker" {
+		if *destination == "" {
+			return fmt.Errorf("enable-docker requires --output AGENT_DIR")
+		}
+		if *check {
+			return hub.CheckDocker(context.Background(), *data, *destination)
+		}
+		return hub.EnableDocker(*destination)
+	}
 	if command == "set-port" {
 		origin, err := hub.SetPort(*data, *destination, *port)
 		if err == nil {
@@ -76,7 +85,7 @@ func run() error {
 		return nil
 	}
 	if command != "serve" && command != "demo" && command != "backup" {
-		return fmt.Errorf("usage: rootlens init|serve|demo|backup|local-agent|set-port|version")
+		return fmt.Errorf("usage: rootlens init|serve|demo|backup|local-agent|set-port|enable-docker|version")
 	}
 	if command == "demo" {
 		host, _, e := net.SplitHostPort(*listen)

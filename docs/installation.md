@@ -36,8 +36,24 @@ the intended LAN address. Use a dedicated empty folder on local NAS storage:
 curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh -s -- --dir /path/to/rootlens --address 192.168.1.20 --port 9443
 ```
 
-Add `--docker` only when opting into container monitoring through the restricted
-proxy. By default the proxy is not started and the agent receives no Docker socket.
+Interactive installs ask explicitly whether to monitor Docker containers; answer
+`y` or `n`. Add `--docker` to opt in directly, including on an existing deployment:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh -s -- --docker --non-interactive
+```
+
+An existing installer-managed deployment is found from the current folder or its
+Docker Compose labels, so the command also works when you do not know its path.
+If several installations are found, the installer lists them and requires `--dir`.
+Manual Compose deployments without the private installer marker use the manual
+procedure below. The existing agent is configured for the restricted proxy and
+restarted without re-enrollment, account reset, port changes or history deletion.
+The installer waits for fresh successful Docker collector health; API/permissions
+errors are reported rather than presenting a successful container-monitoring setup.
+
+For unattended host-only installation, omit `--docker` and use `--non-interactive`.
+The proxy is then not started and the agent receives no Docker socket.
 The proxy retains powerful access to the real Docker socket; see the section below.
 
 Each installation uses a distinct Compose project derived from its directory.
@@ -46,7 +62,8 @@ agent credentials. To change the public port, rerun with the original `--dir` an
 select the new port (or supply `--port`). The installer checks the binding before
 stopping services, then updates `.env`, the hub origin and the local agent URL
 together. Other settings, including a custom internal listener, are retained.
-Address/profile changes are still refused. Preview.2 installs can change ports
+Address changes are still refused. Explicit `--docker` can enable a previously
+disabled collector; repeat runs preserve an already-enabled profile. Preview.2/3 installs can change ports
 using the current configuration helper without upgrading their service images.
 An existing nonempty directory without an installer marker is left untouched. This
 command is not an upgrade or reset command; follow the backup/upgrade procedure.
@@ -103,6 +120,13 @@ rootlens set-port --data /var/lib/rootlens --output /etc/rootlens/agent --port 1
 `--output` is optional for hub-only installations. Update the native listener or
 reverse-proxy mapping as appropriate, update remote agent URLs, then restart. This
 command preserves certificates, account/session data, identities and credentials.
+
+For a manually managed installation, stop the agent and run
+`rootlens enable-docker --output AGENT_DIR` using a binary from preview.4 or newer.
+This selects `/run/rootlens/docker.sock`; start the documented restricted proxy
+and restart the agent afterward. It does not grant direct Docker socket access or
+change a custom Docker endpoint. The Docker deployment's `--docker` option performs
+these steps automatically. Collector configuration remains local to the agent.
 
 Trust the generated `ca.pem` in the browser/device trust store and copy only that
 public CA certificate to agents. Do not bypass certificate warnings. Read

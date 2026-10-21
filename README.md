@@ -71,7 +71,17 @@ and asks which HTTPS port to use (Enter keeps 8443, or the saved port on repeat
 runs). It prints the dashboard URL and CA certificate location. Trust that certificate
 on your browser device, then create your administrator account using the one-time
 token shown only on an interactive terminal (also saved privately as `setup.token`).
-Docker container monitoring is opt-in: add `-s -- --docker` after `sudo sh`.
+The installer explicitly asks whether to monitor Docker containers. Existing
+installer-managed deployments are found automatically, including when the command
+is run from another folder. Enable containers on a new or existing installation:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/silkute/RootLens/main/install.sh | sudo sh -s -- --docker --non-interactive
+```
+
+This starts the restricted Docker proxy, updates the existing agent configuration
+and checks collector health while preserving accounts, credentials and history.
+If multiple installations are found, select one with `--dir`.
 See [installer options](docs/installation.md#one-command-installation) for a custom
 NAS folder, address, port, offline installation and repeat-run behavior.
 
