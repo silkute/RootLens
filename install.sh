@@ -3,7 +3,7 @@
 main() {
   set -eu
   umask 077
-  VERSION='v0.1.0-preview.3'
+  VERSION='v0.1.0-preview.4'
   directory="$PWD/rootlens"
   address=''
   port=8443
@@ -13,12 +13,14 @@ main() {
   port_set=0
   docker_set=0
   non_interactive=0
+  directory_set=0
+  saved_docker=''
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --dir|--address|--port|--offline)
         [ "$#" -ge 2 ] || { echo "Missing value for $1" >&2; exit 1; }
         case "$1" in
-          --dir) directory=$2 ;;
+          --dir) directory=$2; directory_set=1 ;;
           --address) address=$2; address_set=1 ;;
           --port) port=$2; port_set=1 ;;
           --offline) offline=$2 ;;
@@ -30,6 +32,7 @@ main() {
         echo 'Usage: sh install.sh [--dir PATH] [--address LAN_IPV4] [--port PORT] [--non-interactive] [--docker] [--offline BUNDLE.tar.gz]'
         echo 'Choose the HTTPS port at the terminal, or supply --port. Repeat runs retain the saved port unless changed.'
         echo 'Requires Linux, Docker Compose, and root. Existing service versions and data are preserved.'
+        echo 'Existing installer-managed deployments are discovered automatically. Use --docker to enable container monitoring on a new or existing install.'
         echo 'Offline mode requires SHA256SUMS beside the bundle and preloaded matching Docker images.'
         return 0 ;;
       *) echo "Unknown option: $1" >&2; exit 1 ;;
@@ -47,6 +50,24 @@ main() {
   context_endpoint=$(docker context inspect --format '{{.Endpoints.docker.Host}}')
   case "$context_endpoint" in unix:///*) ;; *) echo 'Select a local Docker context before installing.' >&2; exit 1 ;; esac
   [ "$(docker info --format '{{.OSType}}')" = linux ] || { echo 'A running Linux Docker Engine is required.' >&2; exit 1; }
+  if [ "$directory_set" = 0 ]; then
+    if [ -f "$PWD/.rootlens-install" ]; then
+      directory=$PWD
+    elif [ ! -f "$directory/.rootlens-install" ]; then
+      candidates=$(docker ps -a --filter label=com.docker.compose.service=hub --format '{{.Image}}|{{.Label "com.docker.compose.project.working_dir"}}' | while IFS='|' read -r image candidate; do
+        case "$image" in ghcr.io/silkute/rootlens-hub:*|rootlens-hub:*)
+          if [ -n "$candidate" ] && [ -f "$candidate/.rootlens-install" ]; then printf '%s\n' "$candidate"; fi ;;
+        esac
+      done | sort -u)
+      count=$(printf '%s\n' "$candidates" | awk 'NF{n++}END{print n+0}')
+      if [ "$count" -gt 1 ]; then
+        echo 'Several RootLens installations were found. Select one with --dir:' >&2
+        printf '%s\n' "$candidates" >&2
+        exit 1
+      fi
+      if [ "$count" = 1 ]; then directory=$candidates; printf 'Found existing RootLens installation: %s\n' "$directory"; fi
+    fi
+  fi
   if [ -z "$directory" ] || [ "$directory" = / ] || [ -L "$directory" ]; then
     echo 'Choose an installation directory, not a root path or symbolic link.' >&2; exit 1
   fi
@@ -59,15 +80,14 @@ main() {
   saved_port=''
   if [ -f "$marker" ]; then
     installed_version=$(sed -n '1p' "$marker")
-    case "$installed_version" in "$VERSION"|v0.1.0-preview.2) ;; *) echo 'This installation version is not supported by this installer. Follow the upgrade guide.' >&2; exit 1 ;; esac
+    case "$installed_version" in "$VERSION"|v0.1.0-preview.2|v0.1.0-preview.3) ;; *) echo 'This installation version is not supported by this installer. Follow the upgrade guide.' >&2; exit 1 ;; esac
     saved_address=$(sed -n '2p' "$marker")
     saved_port=$(sed -n '3p' "$marker")
     saved_docker=$(sed -n '4p' "$marker")
     [ "$address_set" = 0 ] || [ "$address" = "$saved_address" ] || { echo 'Address conflicts with the existing installation.' >&2; exit 1; }
-    [ "$docker_set" = 0 ] || [ "$saved_docker" = 1 ] || { echo 'Enable additional collectors through the documented configuration procedure.' >&2; exit 1; }
     address=$saved_address
     if [ "$port_set" = 0 ]; then port=$saved_port; fi
-    docker_monitoring=$saved_docker
+    if [ "$docker_set" = 0 ]; then docker_monitoring=$saved_docker; fi
   else
     [ -z "$(ls -A "$directory")" ] || { echo 'The directory is not empty. Choose a new folder; existing files will not be overwritten.' >&2; exit 1; }
     if [ -z "$address" ] && command -v ip >/dev/null 2>&1; then
@@ -100,6 +120,27 @@ main() {
     done
   fi
   valid_port "$port" || { echo 'Port must be from 1 to 65535, without leading zeroes.' >&2; exit 1; }
+  docker_pending="$directory/.docker-enable"
+  if [ -f "$docker_pending" ]; then
+    docker_monitoring=1
+  elif [ "$docker_set" = 0 ] && [ "$docker_monitoring" = 0 ] && [ "$non_interactive" = 0 ] && ( : <>/dev/tty ) 2>/dev/null; then
+    printf 'Container monitoring uses a restricted proxy with access to the Docker socket.\n' >/dev/tty
+    while :; do
+      printf 'Monitor Docker containers? [y/n]: ' >/dev/tty
+      IFS= read -r docker_choice </dev/tty || { echo 'Docker selection cancelled.' >&2; exit 1; }
+      case "$docker_choice" in
+        y|Y|yes|YES) docker_monitoring=1; break ;;
+        n|N|no|NO) break ;;
+        *) printf 'Choose y for container monitoring, or n for host metrics only.\n' >/dev/tty ;;
+      esac
+    done
+  fi
+  configure_docker=0
+  if [ "$saved_docker" = 0 ] && [ "$docker_monitoring" = 1 ]; then configure_docker=1; fi
+  if [ -f "$docker_pending" ]; then configure_docker=1; fi
+  if [ "$docker_monitoring" = 1 ] && [ ! -S /var/run/docker.sock ]; then
+    echo 'Docker monitoring requires the local /var/run/docker.sock Unix socket. Custom/rootless sockets need manual proxy configuration.' >&2; exit 1
+  fi
   origin="https://$address:$port"
   if [ "$port" = 443 ]; then origin="https://$address"; fi
   case "$docker_monitoring" in 0|1) ;; *) echo 'Invalid installation marker.' >&2; exit 1 ;; esac
@@ -152,8 +193,11 @@ main() {
   if [ -n "$saved_port" ]; then
     if [ "$saved_port" != "$port" ] || [ -f "$pending" ] || [ "$port_set" = 1 ]; then reconfigure=1; fi
   fi
-  if [ -z "$saved_port" ] || [ "$reconfigure" = 1 ]; then
+  if [ -z "$saved_port" ] || [ "$reconfigure" = 1 ] || [ "$docker_monitoring" = 1 ]; then
     if [ -z "$offline" ] && [ "$installed_version" != "$VERSION" ]; then docker pull "$helper_image"; fi
+  fi
+  if [ "$configure_docker" = 1 ]; then touch "$docker_pending"; fi
+  if [ -z "$saved_port" ] || [ "$reconfigure" = 1 ]; then
     # Docker checks the host-side binding, including ports below 1024. The probe
     # has no application listener and exits immediately, releasing the binding.
     if [ "$saved_port" != "$port" ]; then
@@ -178,6 +222,18 @@ main() {
     printf '%s\n%s\n%s\n%s\n' "$installed_version" "$address" "$port" "$docker_monitoring" > "$marker.new"
     mv "$marker.new" "$marker"
     rm -f "$pending"
+  fi
+  if [ "$configure_docker" = 1 ]; then
+    compose stop agent
+    mkdir -p "$directory/agent"
+    chown 10001:10001 "$directory/agent"
+    chmod 700 "$directory/agent"
+    docker run --rm --pull never --read-only --cap-drop ALL --security-opt no-new-privileges:true --network none \
+      --mount "type=bind,source=$directory/agent,target=/etc/rootlens" \
+      --entrypoint sh "$helper_image" -c 'if [ -f /etc/rootlens/agent.json ]; then exec rootlens enable-docker --output /etc/rootlens; fi'
+    printf '%s\n%s\n%s\n%s\n' "$installed_version" "$address" "$port" 1 > "$marker.new"
+    mv "$marker.new" "$marker"
+    rm -f "$docker_pending"
   fi
   if [ ! -f "$directory/.installed" ]; then
     compose stop agent hub
@@ -230,6 +286,22 @@ main() {
       sleep 1
     done
     [ "$ready" = 1 ] || { echo 'The new HTTPS endpoint is not ready. Data is preserved; rerun with the same --port to resume.' >&2; exit 1; }
+  fi
+  if [ "$docker_monitoring" = 1 ]; then
+    ready=0
+    attempt=0
+    while [ "$attempt" -lt 20 ]; do
+      attempt=$((attempt + 1))
+      if docker run --rm --pull never --read-only --cap-drop ALL --security-opt no-new-privileges:true --network none \
+        --mount "type=volume,source=${project}_hub-data,target=/data" \
+        --mount "type=bind,source=$directory/agent,target=/etc/rootlens,readonly" \
+        "$helper_image" enable-docker --data /data --output /etc/rootlens --check >/dev/null 2>&1; then ready=1; break; fi
+      sleep 2
+    done
+    [ "$ready" = 1 ] || { echo 'Host monitoring is running, but Docker collection is not ready. Check docker-proxy and agent logs in the discovered installation directory; your data and credentials are preserved.' >&2; exit 1; }
+    echo 'Docker container monitoring is enabled and the collector is reporting successfully.'
+  else
+    echo 'Host monitoring only. Enable container monitoring by rerunning this installer with --docker.'
   fi
   printf '\nRootLens is running: %s\n' "$origin"
   printf 'Trust the local CA certificate on your browser device: %s/ca.pem\n' "$directory"

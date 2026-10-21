@@ -1057,6 +1057,11 @@ onBeforeUnmount(() => {
                   "Connect the optional Docker collector to view containers."
                 }}
               </p>
+              <p v-if="!host.capabilities.docker || host.capabilities.docker.status === 'unsupported'">
+                To enable Docker monitoring, rerun the installer with
+                <code>--docker</code>. Existing installer-managed installations
+                are found automatically.
+              </p>
             </div>
             <div v-else class="table-wrap">
               <table class="container-table">

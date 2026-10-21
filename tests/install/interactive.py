@@ -14,6 +14,7 @@ if pid == 0:
                       "interactive-installer", sys.argv[1], sys.argv[2]])
 
 answers = [b"0", b"65536", b"abc", b"0443", b"18446"]
+docker_answers = [b"", b"n"]
 transcript = b""
 cursor = 0
 deadline = time.monotonic() + 180
@@ -41,6 +42,13 @@ try:
             if not answers:
                 raise SystemExit("Unexpected extra port prompt")
             os.write(terminal, answers.pop(0) + b"\n")
+        else:
+            docker_match = re.search(rb"Monitor Docker containers\? \[y/n\]: ", transcript[cursor:])
+            if docker_match:
+                cursor += docker_match.end()
+                if not docker_answers:
+                    raise SystemExit("Unexpected extra Docker prompt")
+                os.write(terminal, docker_answers.pop(0) + b"\n")
 finally:
     os.close(terminal)
 _, status = os.waitpid(pid, 0)
@@ -52,4 +60,5 @@ if os.waitstatus_to_exitcode(status) != 0:
     print("\n".join(safe[-30:]))
     raise SystemExit("Interactive install failed")
 assert not answers, "Port validation prompts were skipped"
-print("Verified terminal port selection, invalid-input recovery and a custom-port installation.")
+assert not docker_answers, "Explicit Docker monitoring choice was skipped"
+print("Verified port selection, invalid-input recovery and an explicit Docker monitoring choice.")

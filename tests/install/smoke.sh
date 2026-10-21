@@ -104,6 +104,26 @@ change_port(443)
 change_port(19446)
 assert (directory / '.rootlens-install').read_text().splitlines()[0] == 'v0.1.0-preview.2'
 print('Verified live port changes, default HTTPS port, browser origin checks, preserved account/session and agent telemetry.')
+# Enable Docker on a previously disabled deployment, from an unrelated folder.
+# The installer must find its directory rather than create another installation.
+import tempfile
+installer = str(pathlib.Path('install.sh').resolve())
+with tempfile.TemporaryDirectory(prefix='rootlens-unrelated-') as unrelated:
+    subprocess.run(['sh', installer, '--docker', '--non-interactive', '--offline', sys.argv[2]],
+                   cwd=unrelated, check=True)
+    assert not (pathlib.Path(unrelated) / 'rootlens').exists()
+host = api('hosts')[0]
+assert host['capabilities']['docker']['status'] == 'available'
+containers = api(f"hosts/{host['id']}/containers")
+assert len(containers) >= 3, 'Running RootLens containers were not discovered'
+assert any(c['entity']['metadata'].get('com.docker.compose.service') == 'hub' for c in containers)
+updated = json.loads((directory / 'agent/agent.json').read_text())
+assert updated['docker_socket'] == '/run/rootlens/docker.sock'
+assert updated['host_id'] == config['host_id']
+assert updated['credential_file'] == config['credential_file']
+assert (directory / '.rootlens-install').read_text().splitlines()[3] == '1'
+assert api('me')['authenticated']
+print('Verified automatic installation discovery, enabling Docker on an existing account, restricted-proxy inventory and preserved identity.')
 PY
 # Simulate interruption after enrollment but before the final success marker.
 rm "$directory/.installed"
@@ -112,8 +132,8 @@ sh install.sh --dir "$directory" --non-interactive --offline "$bundle"
 after=$(compose exec -T agent sha256sum /state/agent.token)
 [ "$before" = "$after" ] || { echo 'Repeat install changed the credential.' >&2; exit 1; }
 [ "$identity_before" = "$(sha256sum "$directory/setup.token" "$directory/ca.pem")" ] || { echo 'Port selection or repeat install replaced identity.' >&2; exit 1; }
-[ "$(compose ps --services --status running | sort | tr '\n' ' ')" = 'agent hub ' ] || { echo 'Unexpected services started.' >&2; exit 1; }
-docker run -d --name "${project}-occupied" --read-only --cap-drop ALL --publish 127.0.0.1:19447:8443 --entrypoint sh ghcr.io/silkute/rootlens-hub:v0.1.0-preview.3 -c 'sleep 120' >/dev/null
+[ "$(compose --profile docker ps --services --status running | sort | tr '\n' ' ')" = 'agent docker-proxy hub ' ] || { echo 'Docker monitoring profile was not retained.' >&2; exit 1; }
+docker run -d --name "${project}-occupied" --read-only --cap-drop ALL --publish 127.0.0.1:19447:8443 --entrypoint sh ghcr.io/silkute/rootlens-hub:v0.1.0-preview.4 -c 'sleep 120' >/dev/null
 settings_before=$(sha256sum "$directory/.env" "$directory/agent/agent.json" "$directory/.rootlens-install")
 if sh install.sh --dir "$directory" --port 19447 --non-interactive --offline "$bundle"; then
   echo 'An occupied port was accepted.' >&2; exit 1
@@ -123,7 +143,7 @@ curl --fail --silent --show-error --noproxy '*' --cacert "$directory/ca.pem" htt
 docker rm -f "${project}-occupied" >/dev/null
 # Simulate interruption between endpoint writes and committing .env/marker.
 compose stop agent hub
-docker run --rm --network none --mount "type=volume,source=${project}_hub-data,target=/data" --mount "type=bind,source=$directory/agent,target=/etc/rootlens" ghcr.io/silkute/rootlens-hub:v0.1.0-preview.3 set-port --data /data --output /etc/rootlens --port 19448
+docker run --rm --network none --mount "type=volume,source=${project}_hub-data,target=/data" --mount "type=bind,source=$directory/agent,target=/etc/rootlens" ghcr.io/silkute/rootlens-hub:v0.1.0-preview.4 set-port --data /data --output /etc/rootlens --port 19448
 printf '19448\n' > "$directory/.port-change"
 sh install.sh --dir "$directory" --non-interactive --offline "$bundle"
 test ! -f "$directory/.port-change"
