@@ -3,7 +3,7 @@
 ## Binary installation
 
 Build as described in the README, or verify checksums and signatures on published
-artifacts. There are no published release URLs in this initial local repository.
+artifacts from [GitHub Releases](https://github.com/silkute/RootLens/releases).
 
 ```sh
 rootlens init --data /var/lib/rootlens --origin https://nas.example:8443 --tls-names nas.example,192.168.1.20
@@ -26,6 +26,19 @@ after initialization. Operator-supplied certificate/key files may replace the se
 files, provided their names and trust chain match the configured origin.
 
 ## Compose
+
+For installation without a source build, download the Docker ZIP from
+[Releases](https://github.com/silkute/RootLens/releases) and follow its bundled
+`INSTALL.md`. It includes a pull-only Compose file, agent template and proxy policy.
+Images are `ghcr.io/silkute/rootlens-hub` and `ghcr.io/silkute/rootlens-agent`, with
+matching version tags and Linux AMD64/ARM64 manifests. The install Compose defaults
+to loopback; set `ROOTLENS_BIND_IP` in `.env` for LAN access, matching the HTTPS origin
+and certificate names. Docker Manager can import the extracted Compose project;
+initialization and enrollment still require the documented steps. No TerraMaster
+hardware or TOS release is qualified by an image build alone.
+
+`deploy/compose.install.yml` is the repository copy of this pull-only configuration.
+`deploy/compose.yml` below is retained for developers building from source.
 
 On a modern Linux machine, from the repository:
 

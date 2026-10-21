@@ -76,6 +76,22 @@ entries. Send them only through the authenticated batch contract. The hub update
 in-memory latest snapshot after successful ingestion; process lists must never enter
 the metric, event, metadata-history or report tables. Never collect argv or environments.
 
+## Release packaging (maintainers and installers)
+
+`sh deploy/package-install.sh vVERSION OUTPUT_DIRECTORY` creates ZIP and tar.gz
+installation bundles, returning a nonzero exit status on invalid input or failure.
+The version must be a container-tag-safe string beginning with `v` and a digit.
+Callers provide `zip` and `tar`, then publish the bundles with the matching hub and
+agent image tags. The release workflow builds Linux AMD64/ARM64 images, signs their
+digests and publishes checksummed bundles only after both images succeed. New GHCR
+packages must be made public in package settings before advertising anonymous pulls.
+
+Installers use the bundle's `compose.yml`, or `deploy/compose.install.yml`, to pull
+version-pinned images without build tools. `ROOTLENS_BIND_IP` defaults to loopback;
+LAN callers must set the actual interface IP and use the same HTTPS origin and
+certificate names during initialization. Keep `agent/`, the proxy policy and named
+volumes when upgrading. The source-development Compose file remains independent.
+
 ## Applicable review checklist
 
 - Verify public contract compatibility and update the relevant section in place.
