@@ -1,0 +1,25 @@
+[Unit]
+Description=RootLens read-only monitoring agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=rootlens
+Group=rootlens
+ExecStart=/usr/local/bin/rootlens-agent --config /etc/rootlens/agent.json
+Restart=on-failure
+RestartSec=5
+StateDirectory=rootlens-agent
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target

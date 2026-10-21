@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.27.3'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: web
+      - run: go run ./cmd/contracts && git diff --exit-code -- api web/src/contracts.generated.ts
+      - run: go test -race ./... && go vet ./...
+      - run: ROOTLENS_LIVE=1 go test ./internal/agent -run TestLiveLinuxCollector -v
+      - run: docker compose -f tests/proxy/compose.yml up --abort-on-container-exit --exit-code-from test
+      - if: always()
+        run: docker compose -f tests/proxy/compose.yml down --volumes
+      - run: go build -o /tmp/rootlens ./cmd/rootlens
+      - run: /tmp/rootlens demo --data /tmp/rootlens-demo --listen 127.0.0.1:8765 > /tmp/rootlens-demo.log 2>&1 &
+      - run: npx playwright install --with-deps chromium && npm run test:e2e
+        working-directory: web
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: browser-report
+          path: web/playwright-report/
+  cross-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.27.3'
+      - run: CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.arch }} go build ./cmd/rootlens ./cmd/rootlens-agent

@@ -1,0 +1,14 @@
+{
+  "hub": "https://localhost:8443",
+  "host_id": "replace-with-host-id",
+  "ca_file": "/etc/rootlens/ca.pem",
+  "credential_file": "/state/agent.token",
+  "enrollment_file": "/etc/rootlens/enrollment.token",
+  "sampling_seconds": 5,
+  "collect_processes": false,
+  "proc": "/host/proc",
+  "sys": "/host/sys",
+  "cgroup": "/host/cgroup",
+  "docker_socket": "",
+  "filesystems": []
+}

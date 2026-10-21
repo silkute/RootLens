@@ -1,0 +1,1864 @@
+{
+  "components": {
+    "schemas": {
+      "Ack": {
+        "additionalProperties": false,
+        "properties": {
+          "duplicate": {
+            "type": "boolean"
+          },
+          "protocol": {
+            "type": "integer"
+          },
+          "sequence": {
+            "type": "string"
+          },
+          "server_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sequence",
+          "server_time",
+          "protocol",
+          "duplicate"
+        ],
+        "type": "object"
+      },
+      "Batch": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_version": {
+            "type": "string"
+          },
+          "boot_id": {
+            "type": "string"
+          },
+          "capabilities": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Capability"
+            },
+            "type": "object"
+          },
+          "entities": {
+            "items": {
+              "$ref": "#/components/schemas/Entity"
+            },
+            "maxItems": 512,
+            "type": "array"
+          },
+          "epoch": {
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            },
+            "maxItems": 256,
+            "type": "array"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/Frame"
+            },
+            "maxItems": 120,
+            "type": "array"
+          },
+          "host_id": {
+            "type": "string"
+          },
+          "minor": {
+            "type": "integer"
+          },
+          "processes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "protocol": {
+            "enum": [
+              1
+            ],
+            "type": "integer"
+          },
+          "sampling_seconds": {
+            "enum": [
+              5,
+              10,
+              15
+            ],
+            "type": "integer"
+          },
+          "sent_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sequence": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "protocol",
+          "minor",
+          "agent_version",
+          "host_id",
+          "boot_id",
+          "epoch",
+          "sequence",
+          "sent_at",
+          "sampling_seconds",
+          "entities",
+          "frames",
+          "capabilities"
+        ],
+        "type": "object"
+      },
+      "Capability": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "at"
+        ],
+        "type": "object"
+      },
+      "Contributor": {
+        "additionalProperties": false,
+        "properties": {
+          "activity": {
+            "type": "number"
+          },
+          "baseline": {
+            "type": "number"
+          },
+          "coverage": {
+            "type": "number"
+          },
+          "device": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "share": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "entity_id",
+          "name",
+          "device",
+          "baseline",
+          "activity",
+          "share",
+          "coverage",
+          "label"
+        ],
+        "type": "object"
+      },
+      "CreateHostRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "EnrollmentRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "credential": {
+            "type": "string"
+          },
+          "host_id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "credential",
+          "host_id"
+        ],
+        "type": "object"
+      },
+      "Entity": {
+        "additionalProperties": false,
+        "properties": {
+          "generation": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "generation"
+        ],
+        "type": "object"
+      },
+      "Event": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "type",
+          "message"
+        ],
+        "type": "object"
+      },
+      "Evidence": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage": {
+            "type": "number"
+          },
+          "level": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "level",
+          "text"
+        ],
+        "type": "object"
+      },
+      "Frame": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "interval_seconds": {
+            "type": "number"
+          },
+          "samples": {
+            "items": {
+              "$ref": "#/components/schemas/Sample"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "at",
+          "interval_seconds",
+          "samples"
+        ],
+        "type": "object"
+      },
+      "Host": {
+        "additionalProperties": false,
+        "properties": {
+          "active_incidents": {
+            "type": "integer"
+          },
+          "agent_version": {
+            "type": "string"
+          },
+          "boot_id": {
+            "type": "string"
+          },
+          "capabilities": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Capability"
+            },
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "last_seen": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_source": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sampling_seconds": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "agent_version",
+          "boot_id",
+          "last_seen",
+          "last_source",
+          "sampling_seconds",
+          "capabilities",
+          "status",
+          "latest",
+          "active_incidents"
+        ],
+        "type": "object"
+      },
+      "Incident": {
+        "additionalProperties": false,
+        "properties": {
+          "contributors": {
+            "items": {
+              "$ref": "#/components/schemas/Contributor"
+            },
+            "type": "array"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array"
+          },
+          "historical": {
+            "type": "boolean"
+          },
+          "host_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "previous_id": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "rule_version": {
+            "type": "integer"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "host_id",
+          "entity_id",
+          "rule",
+          "rule_version",
+          "title",
+          "resource",
+          "state",
+          "severity",
+          "start",
+          "updated",
+          "evidence",
+          "contributors",
+          "steps",
+          "limitations",
+          "historical"
+        ],
+        "type": "object"
+      },
+      "InvestigationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "to": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "type": "object"
+      },
+      "LoginRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "type": "object"
+      },
+      "Metric": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "unit",
+          "kind",
+          "description"
+        ],
+        "type": "object"
+      },
+      "MetricPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "coverage": {
+            "type": "number"
+          },
+          "generation": {
+            "type": "string"
+          },
+          "max": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "at",
+          "values",
+          "coverage"
+        ],
+        "type": "object"
+      },
+      "MetricSeries": {
+        "additionalProperties": false,
+        "properties": {
+          "entity": {
+            "$ref": "#/components/schemas/Entity"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/MetricPoint"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "entity",
+          "points"
+        ],
+        "type": "object"
+      },
+      "MetricsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "registry": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Metric"
+            },
+            "type": "object"
+          },
+          "resolution_seconds": {
+            "type": "integer"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/MetricSeries"
+            },
+            "type": "array"
+          },
+          "to": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resolution_seconds",
+          "series",
+          "from",
+          "to",
+          "registry"
+        ],
+        "type": "object"
+      },
+      "Process": {
+        "additionalProperties": false,
+        "properties": {
+          "cpu_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "pid": {
+            "type": "integer"
+          },
+          "rss_bytes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "pid",
+          "name",
+          "rss_bytes"
+        ],
+        "type": "object"
+      },
+      "ProcessSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "limited": {
+            "type": "boolean"
+          },
+          "processes": {
+            "items": {
+              "$ref": "#/components/schemas/Process"
+            },
+            "type": "array"
+          },
+          "visible": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "at",
+          "processes",
+          "visible",
+          "limited"
+        ],
+        "type": "object"
+      },
+      "Retention": {
+        "additionalProperties": false,
+        "properties": {
+          "event_days": {
+            "type": "integer"
+          },
+          "minute_days": {
+            "type": "integer"
+          },
+          "quarter_days": {
+            "type": "integer"
+          },
+          "raw_hours": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "raw_hours",
+          "minute_days",
+          "quarter_days",
+          "event_days"
+        ],
+        "type": "object"
+      },
+      "Sample": {
+        "additionalProperties": false,
+        "properties": {
+          "entity_id": {
+            "type": "string"
+          },
+          "generation": {
+            "type": "string"
+          },
+          "quality": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "entity_id",
+          "generation",
+          "values"
+        ],
+        "type": "object"
+      },
+      "SetupRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "username",
+          "password"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "agentBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "sessionCookie": {
+        "in": "cookie",
+        "name": "rootlens_session",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "title": "RootLens API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/agent/batches": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Batch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ack"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "agentBearer": []
+          }
+        ],
+        "summary": "post /agent/batches"
+      }
+    },
+    "/api/v1/agent/enroll": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [],
+        "summary": "post /agent/enroll"
+      }
+    },
+    "/api/v1/containers/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /containers/{id}"
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /events"
+      }
+    },
+    "/api/v1/health/storage": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /health/storage"
+      }
+    },
+    "/api/v1/hosts": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Host"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /hosts"
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHostRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "post /hosts"
+      }
+    },
+    "/api/v1/hosts/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Host"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /hosts/{id}"
+      }
+    },
+    "/api/v1/hosts/{id}/containers": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /hosts/{id}/containers"
+      }
+    },
+    "/api/v1/hosts/{id}/credentials": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /hosts/{id}/credentials"
+      }
+    },
+    "/api/v1/hosts/{id}/credentials/rotate": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "post /hosts/{id}/credentials/rotate"
+      }
+    },
+    "/api/v1/hosts/{id}/credentials/{credential}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "credential",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Completed"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "delete /hosts/{id}/credentials/{credential}"
+      }
+    },
+    "/api/v1/hosts/{id}/diagnostics": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /hosts/{id}/diagnostics"
+      }
+    },
+    "/api/v1/hosts/{id}/enrollment-tokens": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "post /hosts/{id}/enrollment-tokens"
+      }
+    },
+    "/api/v1/hosts/{id}/investigations": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvestigationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "post /hosts/{id}/investigations"
+      }
+    },
+    "/api/v1/hosts/{id}/metrics": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "RFC3339 time, or an entity identifier",
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "RFC3339 time, or an entity identifier",
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "RFC3339 time, or an entity identifier",
+            "in": "query",
+            "name": "entity",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /hosts/{id}/metrics"
+      }
+    },
+    "/api/v1/hosts/{id}/processes": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /hosts/{id}/processes"
+      }
+    },
+    "/api/v1/incidents": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Incident"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /incidents"
+      }
+    },
+    "/api/v1/incidents/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Incident"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /incidents/{id}"
+      }
+    },
+    "/api/v1/incidents/{id}/evidence": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /incidents/{id}/evidence"
+      }
+    },
+    "/api/v1/incidents/{id}/report": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /incidents/{id}/report"
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [],
+        "summary": "get /me"
+      }
+    },
+    "/api/v1/session": {
+      "delete": {
+        "responses": {
+          "204": {
+            "description": "Completed"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "delete /session"
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response; see docs/api.md."
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [],
+        "summary": "post /session"
+      }
+    },
+    "/api/v1/settings": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Retention"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "get /settings"
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Retention"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Retention"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "patch /settings"
+      }
+    },
+    "/api/v1/setup": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid or oversized input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission or CSRF failure"
+          },
+          "503": {
+            "description": "Storage unavailable; retry without discarding data"
+          }
+        },
+        "security": [],
+        "summary": "post /setup"
+      }
+    }
+  }
+}

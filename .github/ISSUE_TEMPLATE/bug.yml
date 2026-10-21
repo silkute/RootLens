@@ -1,0 +1,21 @@
+name: Bug report
+description: Report incorrect measurements, behavior or display.
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Explain the smallest reproducible example. Do not include secrets or raw container inspection output.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: RootLens version, OS/kernel, architecture and Docker version
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Collector capabilities and reproduction
+      description: Include availability states, timing and relevant synthetic fixtures where possible.

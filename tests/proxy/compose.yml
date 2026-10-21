@@ -1,0 +1,35 @@
+name: rootlens-proxy-tests
+services:
+  fake-engine:
+    image: python:3.13.12-alpine
+    command: [python, /tests/fake_engine.py]
+    network_mode: none
+    volumes:
+      - .:/tests:ro
+      - fake-engine-socket:/fake
+  proxy:
+    image: haproxy:3.2.11-alpine
+    user: "0:0"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    entrypoint: [/bin/sh, -c]
+    command: ["sed 's@/var/run/docker.sock@/fake/docker.sock@' /policy.cfg > /tmp/haproxy.cfg && exec haproxy -f /tmp/haproxy.cfg"]
+    tmpfs: [/tmp:size=8m]
+    volumes:
+      - ../../deploy/haproxy.cfg:/policy.cfg:ro
+      - fake-engine-socket:/fake
+      - proxy-socket:/run/rootlens
+    depends_on: [fake-engine]
+  test:
+    image: python:3.13.12-alpine
+    command: [python, /tests/test_proxy.py]
+    network_mode: none
+    volumes:
+      - .:/tests:ro
+      - proxy-socket:/run/rootlens:ro
+    depends_on: [proxy]
+volumes:
+  fake-engine-socket:
+  proxy-socket:
